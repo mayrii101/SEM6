@@ -12,21 +12,19 @@ app = Flask(__name__)
 CORS(app)
 
 # =========================================
-# DATABASE CONNECTION
+# DATABASE CONFIG
 # =========================================
 
-db = mysql.connector.connect(
+db_config = {
 
-    host="localhost",
+    "host": "localhost",
 
-    user="root",
+    "user": "root",
 
-    password="Jamayralol1!",
+    "password": "Jamayralol1!",
 
-    database="FestivalSafety"
-)
-
-cursor = db.cursor(dictionary=True)
+    "database": "FestivalSafety"
+}
 
 # =========================================
 # TEST ROUTE
@@ -49,14 +47,59 @@ def home():
 @app.route("/zones", methods=["GET"])
 def get_zones():
 
-    cursor.execute(
+    db = mysql.connector.connect(**db_config)
 
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute(
         "SELECT * FROM Zones"
     )
 
     zones = cursor.fetchall()
 
+    cursor.close()
+    db.close()
+
     return jsonify(zones)
+
+# =========================================
+# GET LIVE ZONE STATUS
+# =========================================
+
+
+@app.route("/zone-status", methods=["GET"])
+def get_zone_status():
+
+    db = mysql.connector.connect(**db_config)
+
+    cursor = db.cursor(dictionary=True)
+
+    query = """
+
+    SELECT
+
+        Zones.Name,
+        Zones.Color,
+
+        ZoneStatus.CurrentCount,
+        ZoneStatus.DensityLevel,
+        ZoneStatus.UpdatedAt
+
+    FROM ZoneStatus
+
+    JOIN Zones
+        ON ZoneStatus.ZoneID = Zones.ID
+
+    """
+
+    cursor.execute(query)
+
+    data = cursor.fetchall()
+
+    cursor.close()
+    db.close()
+
+    return jsonify(data)
 
 # =========================================
 # CREATE USER
@@ -67,6 +110,10 @@ def get_zones():
 def create_user():
 
     data = request.json
+
+    db = mysql.connector.connect(**db_config)
+
+    cursor = db.cursor()
 
     sql = """
 
@@ -90,6 +137,9 @@ def create_user():
 
     db.commit()
 
+    cursor.close()
+    db.close()
+
     return jsonify({
 
         "status": "success"
@@ -104,6 +154,10 @@ def create_user():
 def send_distress():
 
     data = request.json
+
+    db = mysql.connector.connect(**db_config)
+
+    cursor = db.cursor()
 
     sql = """
 
@@ -126,6 +180,9 @@ def send_distress():
 
     db.commit()
 
+    cursor.close()
+    db.close()
+
     return jsonify({
 
         "status": "alert received"
@@ -138,6 +195,10 @@ def send_distress():
 
 @app.route("/distress", methods=["GET"])
 def get_distress():
+
+    db = mysql.connector.connect(**db_config)
+
+    cursor = db.cursor(dictionary=True)
 
     query = """
 
@@ -167,8 +228,34 @@ def get_distress():
 
     messages = cursor.fetchall()
 
+    cursor.close()
+    db.close()
+
     return jsonify(messages)
 
+# =========================================
+# GET LIVE PEOPLE
+# =========================================
+
+
+@app.route("/people", methods=["GET"])
+def get_people():
+
+    db = mysql.connector.connect(**db_config)
+
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute(
+
+        "SELECT * FROM LivePeople"
+    )
+
+    people = cursor.fetchall()
+
+    cursor.close()
+    db.close()
+
+    return jsonify(people)
 # =========================================
 # RUN SERVER
 # =========================================
