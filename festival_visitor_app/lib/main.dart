@@ -176,9 +176,7 @@ class _FestivalHomePageState extends State<FestivalHomePage> {
       body: SafeArea(
         child: Column(
           children: [
-            // ==========================
-            // MAP SECTION
-            // ==========================
+            // MAP
             Expanded(
               child: Stack(
                 children: [
@@ -196,7 +194,6 @@ class _FestivalHomePageState extends State<FestivalHomePage> {
                   ),
 
                   // LIVE HEATMAP ZONES
-                  // ======================
                   buildHeatZone(
                     top: 70,
                     left: 200,
@@ -373,11 +370,10 @@ class _FestivalHomePageState extends State<FestivalHomePage> {
                     height: 600,
                     child: Image.asset("assets/wcmidden.png"),
                   ),
+
                   //
 
-                  // ======================
                   // REFRESH BUTTON
-                  // ======================
                   Positioned(
                     top: 30,
                     right: 30,
@@ -388,9 +384,7 @@ class _FestivalHomePageState extends State<FestivalHomePage> {
                     ),
                   ),
 
-                  // ======================
-                  // LEGEND (OVERLAY)
-                  // ======================
+                  // LEGEND
                   Positioned(
                     bottom: 50,
                     left: 30,
@@ -454,9 +448,7 @@ class _FestivalHomePageState extends State<FestivalHomePage> {
                 ],
               ),
             ),
-            // ==========================
-            // BOTTOM PANEL (EMERGENCY BUTTON ONLY)
-            // ==========================
+            // BOTTOM PANEL
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(

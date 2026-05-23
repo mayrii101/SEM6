@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import random
 import serial
 import time
 import requests
@@ -63,329 +62,83 @@ connected = st.session_state.connected
 
 esp32 = st.session_state.get("esp32")
 
-# =========================================
-# FESTIVAL ZONES
-# =========================================
 
-zones = {
+# FETCH LIVE PEOPLE
 
-    "MainStage": {
-        "x1": 0,
-        "x2": 40,
-        "y1": 60,
-        "y2": 100
-    },
 
-    "FoodCourt": {
-        "x1": 60,
-        "x2": 100,
-        "y1": 60,
-        "y2": 100
-    },
+try:
 
-    "ChillZone": {
-        "x1": 0,
-        "x2": 40,
-        "y1": 0,
-        "y2": 40
-    },
+    people_response = requests.get(
 
-    "Entrance": {
-        "x1": 60,
-        "x2": 100,
-        "y1": 0,
-        "y2": 40
-    },
-
-    # ───────── Middle band (y: 40–60) ─────────
-
-    "Amapiano Stage": {
-        "x1": 0,
-        "x2": 20,
-        "y1": 40,
-        "y2": 60
-    },
-
-    "Dancehall Stage": {
-        "x1": 20,
-        "x2": 40,
-        "y1": 40,
-        "y2": 60
-    },
-
-    "HipHop Stage": {
-        "x1": 40,
-        "x2": 60,
-        "y1": 40,
-        "y2": 60
-    },
-
-    "Notes Stage": {
-        "x1": 60,
-        "x2": 80,
-        "y1": 40,
-        "y2": 60
-    },
-
-    "Spotlight Stage": {
-        "x1": 80,
-        "x2": 100,
-        "y1": 40,
-        "y2": 60
-    },
-
-    # ───────── Extra facilities ─────────
-
-    "FoodCourt South": {
-        "x1": 40,
-        "x2": 60,
-        "y1": 60,
-        "y2": 80
-    },
-
-    "FoodCourt North": {
-        "x1": 40,
-        "x2": 60,
-        "y1": 80,
-        "y2": 100
-    },
-
-    "Toilets West": {
-        "x1": 40,
-        "x2": 50,
-        "y1": 0,
-        "y2": 20
-    },
-
-    "Toilets East": {
-        "x1": 50,
-        "x2": 60,
-        "y1": 0,
-        "y2": 20
-    }
-}
-
-# =========================================
-# INITIALIZE PEOPLE
-# =========================================
-
-TOTAL_PEOPLE = 200
-
-if "people" not in st.session_state:
-
-    st.session_state.people = []
-
-    for i in range(TOTAL_PEOPLE):
-
-        zone = random.choice(
-            list(zones.keys())
-        )
-
-        area = zones[zone]
-
-        st.session_state.people.append({
-
-            "id": i,
-
-            "zone": zone,
-
-            "x": random.uniform(
-                area["x1"],
-                area["x2"]
-            ),
-
-            "y": random.uniform(
-                area["y1"],
-                area["y2"]
-            )
-        })
-
-# =========================================
-# INITIALIZE HISTORY
-# =========================================
-
-if "history" not in st.session_state:
-
-    st.session_state.history = []
-
-# =========================================
-# REAL BRACELET
-# =========================================
-
-if "bracelet" not in st.session_state:
-
-    st.session_state.bracelet = {
-
-        "zone": "MainStage"
-    }
-
-# =========================================
-# MOVE PEOPLE
-# =========================================
-
-for person in st.session_state.people:
-
-    person["x"] += random.uniform(-2, 2)
-
-    person["y"] += random.uniform(-2, 2)
-
-    person["x"] = max(
-        0,
-        min(100, person["x"])
+        f"{API_URL}/people"
     )
 
-    person["y"] = max(
-        0,
-        min(100, person["y"])
+    people = people_response.json()
+
+except Exception as e:
+
+    st.error(
+        f"Could not load people data: {e}"
     )
 
-    # Change zones
+    st.stop()
 
-    if random.random() < 0.03:
 
-        new_zone = random.choice(
-            list(zones.keys())
-        )
+# FETCH ZONE STATUS
 
-        area = zones[new_zone]
 
-        person["zone"] = new_zone
+try:
 
-        person["x"] = random.uniform(
-            area["x1"],
-            area["x2"]
-        )
+    zone_response = requests.get(
 
-        person["y"] = random.uniform(
-            area["y1"],
-            area["y2"]
-        )
-
-# =========================================
-# COUNT ZONES
-# =========================================
-
-zone_counts = {}
-
-for zone in zones.keys():
-
-    count = len([
-
-        p for p in st.session_state.people
-
-        if p["zone"] == zone
-    ])
-
-    zone_counts[zone] = count
-
-# =========================================
-# BRACELET STATUS
-# =========================================
-
-bracelet_zone = random.choice(
-    list(zones.keys())
-)
-
-people_in_zone = zone_counts[bracelet_zone]
-
-if people_in_zone < 45:
-
-    bracelet_state = "LOW"
-
-    bracelet_color = "green"
-
-elif people_in_zone < 55:
-
-    bracelet_state = "MEDIUM"
-
-    bracelet_color = "orange"
-
-else:
-
-    bracelet_state = "HIGH"
-
-    bracelet_color = "red"
-
-# =========================================
-# SEND TO ESP32
-# =========================================
-
-if connected:
-
-    esp32.write(
-        (bracelet_state + "\n").encode()
+        f"{API_URL}/zone-status"
     )
 
-# =========================================
-# SAVE HISTORY
-# =========================================
+    zones = zone_response.json()
 
-st.session_state.history.append({
+except Exception as e:
 
-    "MainStage":
-        zone_counts["MainStage"],
+    st.error(
+        f"Could not load zone data: {e}"
+    )
 
-    "FoodCourt":
-        zone_counts["FoodCourt"],
+    st.stop()
 
-    "ChillZone":
-        zone_counts["ChillZone"],
 
-    "Entrance":
-        zone_counts["Entrance"],
+# FETCH MESSAGES
 
-    "Amapiano Stage":
-        zone_counts["Amapiano Stage"],
 
-    "Dancehall Stage":
-        zone_counts["Dancehall Stage"],
+try:
 
-    "HipHop Stage":
-        zone_counts["HipHop Stage"],
+    distress_response = requests.get(
 
-    "Notes Stage":
-        zone_counts["Notes Stage"],
+        f"{API_URL}/distress"
+    )
 
-    "Spotlight Stage":
-        zone_counts["Spotlight Stage"],
+    distress_messages = distress_response.json()
 
-    "FoodCourt South":
-        zone_counts["FoodCourt South"],
+except BaseException:
 
-    "Toilets West":
-        zone_counts["Toilets West"],
+    distress_messages = []
 
-    "Toilets East":
-        zone_counts["Toilets East"],
 
-    "FoodCourt North":
-        zone_counts["FoodCourt North"]
-})
-
-if len(st.session_state.history) > 30:
-
-    st.session_state.history.pop(0)
-
-# =========================================
 # LIVE FESTIVAL MAP
-# =========================================
 
-df = pd.DataFrame(
-    st.session_state.people
-)
 
-st.subheader("🗺️ Live Festival Map")
+st.subheader("Live Festival Map")
+
+df = pd.DataFrame(people)
 
 fig = px.scatter(
 
     df,
 
-    x="x",
-    y="y",
+    x="X",
+    y="Y",
 
-    color="zone",
+    color="ZoneName",
 
-    hover_data=["id"],
+    hover_data=["ID"],
 
     width=900,
     height=600
@@ -409,9 +162,29 @@ st.plotly_chart(
     width='stretch'
 )
 
-# =========================================
+
 # HISTORICAL ANALYTICS
-# =========================================
+
+
+if "history" not in st.session_state:
+
+    st.session_state.history = []
+
+
+history_entry = {}
+
+for zone in zones:
+
+    history_entry[zone["Name"]] = \
+        zone["CurrentCount"]
+
+st.session_state.history.append(
+    history_entry
+)
+
+if len(st.session_state.history) > 30:
+
+    st.session_state.history.pop(0)
 
 st.subheader("📈 Historical Crowd Analytics")
 
@@ -451,11 +224,73 @@ st.plotly_chart(
     width='stretch'
 )
 
-# =========================================
-# BRACELET STATUS
-# =========================================
 
-st.subheader("📍 Real Bracelet")
+# SELECT BRACELET ZONE (niet meer gesimuleerd zelf kiezen)
+
+
+zone_names = [
+
+    z["Name"]
+
+    for z in zones
+]
+
+bracelet_zone = st.selectbox(
+
+    "Select Bracelet Zone",
+
+    zone_names
+)
+
+
+# GET BRACELET STATE FROM API
+
+
+selected_zone = next(
+
+    z for z in zones
+
+    if z["Name"] == bracelet_zone
+)
+
+bracelet_state = \
+    selected_zone["DensityLevel"]
+
+people_in_zone = \
+    selected_zone["CurrentCount"]
+
+
+# DETERMINE COLOR
+
+
+if bracelet_state == "LOW":
+
+    bracelet_color = "green"
+
+elif bracelet_state == "MEDIUM":
+
+    bracelet_color = "orange"
+
+else:
+
+    bracelet_color = "red"
+
+
+# SEND TO ESP32
+
+
+if connected:
+
+    esp32.write(
+
+        (bracelet_state + "\n").encode()
+    )
+
+
+# BRACELET STATUS
+
+
+st.subheader("Real Bracelet")
 
 st.write(
     f"Zone: **{bracelet_zone}**"
@@ -469,83 +304,73 @@ st.write(
     f"Nearby People: **{people_in_zone}**"
 )
 
-# =========================================
 # ZONE HEAT LEVELS
-# =========================================
 
-st.subheader("🔥 Zone Heat Levels")
 
-for zone, count in zone_counts.items():
+st.subheader("Zone Heat Levels")
 
-    if count < 30:
+for zone in zones:
+
+    name = zone["Name"]
+
+    count = zone["CurrentCount"]
+
+    density = zone["DensityLevel"]
+
+    if density == "LOW":
 
         st.success(
-            f"{zone}: {count} people"
+            f"{name}: {count} people"
         )
 
-    elif count < 70:
+    elif density == "MEDIUM":
 
         st.warning(
-            f"{zone}: {count} people"
+            f"{name}: {count} people"
         )
 
     else:
 
         st.error(
-            f"{zone}: {count} people"
+            f"{name}: {count} people"
         )
 
-# =========================================
+
 # DISTRESS MESSAGES
-# =========================================
 
-st.subheader("🚨 Distress Messages")
 
-try:
+st.subheader("Distress Messages")
 
-    distress_response = requests.get(
+if len(distress_messages) == 0:
 
-        f"{API_URL}/distress"
+    st.success(
+        "No distress messages."
     )
 
-    distress_messages = distress_response.json()
+else:
 
-    if len(distress_messages) == 0:
+    for alert in distress_messages:
 
-        st.success(
-            "No distress messages."
+        st.error(
+
+            f'''
+            NAME:
+            {alert["Sender"]}
+
+            ZONE:
+            {alert["Zone"]}
+
+            MESSAGE:
+            {alert["Message"]}
+
+            TIME:
+            {alert["CreatedAT"]}
+            '''
         )
 
-    else:
 
-        for alert in distress_messages:
+# CONNECTION STATUS (ESP32)
 
-            st.error(
-
-                f'''
-                NAME:
-                {alert["Sender"]}
-
-                ZONE:
-                {alert["Zone"]}
-
-                MESSAGE:
-                {alert["Message"]}
-
-                TIME:
-                {alert["CreatedAT"]}
-                '''
-            )
-
-except Exception as e:
-
-    st.warning(
-        f"Could not load distress messages: {e}"
-    )
-
-# =========================================
-# CONNECTION STATUS
-# =========================================
 
 if connected:
 
