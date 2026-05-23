@@ -70,7 +70,6 @@ esp32 = st.session_state.get("esp32")
 zones = {
 
     "MainStage": {
-
         "x1": 0,
         "x2": 40,
         "y1": 60,
@@ -78,7 +77,6 @@ zones = {
     },
 
     "FoodCourt": {
-
         "x1": 60,
         "x2": 100,
         "y1": 60,
@@ -86,7 +84,6 @@ zones = {
     },
 
     "ChillZone": {
-
         "x1": 0,
         "x2": 40,
         "y1": 0,
@@ -94,11 +91,77 @@ zones = {
     },
 
     "Entrance": {
-
         "x1": 60,
         "x2": 100,
         "y1": 0,
         "y2": 40
+    },
+
+    # ───────── Middle band (y: 40–60) ─────────
+
+    "Amapiano Stage": {
+        "x1": 0,
+        "x2": 20,
+        "y1": 40,
+        "y2": 60
+    },
+
+    "Dancehall Stage": {
+        "x1": 20,
+        "x2": 40,
+        "y1": 40,
+        "y2": 60
+    },
+
+    "HipHop Stage": {
+        "x1": 40,
+        "x2": 60,
+        "y1": 40,
+        "y2": 60
+    },
+
+    "Notes Stage": {
+        "x1": 60,
+        "x2": 80,
+        "y1": 40,
+        "y2": 60
+    },
+
+    "Spotlight Stage": {
+        "x1": 80,
+        "x2": 100,
+        "y1": 40,
+        "y2": 60
+    },
+
+    # ───────── Extra facilities ─────────
+
+    "FoodCourt South": {
+        "x1": 40,
+        "x2": 60,
+        "y1": 60,
+        "y2": 80
+    },
+
+    "FoodCourt North": {
+        "x1": 40,
+        "x2": 60,
+        "y1": 80,
+        "y2": 100
+    },
+
+    "Toilets West": {
+        "x1": 40,
+        "x2": 50,
+        "y1": 0,
+        "y2": 20
+    },
+
+    "Toilets East": {
+        "x1": 50,
+        "x2": 60,
+        "y1": 0,
+        "y2": 20
     }
 }
 
@@ -269,7 +332,34 @@ st.session_state.history.append({
         zone_counts["ChillZone"],
 
     "Entrance":
-        zone_counts["Entrance"]
+        zone_counts["Entrance"],
+
+    "Amapiano Stage":
+        zone_counts["Amapiano Stage"],
+
+    "Dancehall Stage":
+        zone_counts["Dancehall Stage"],
+
+    "HipHop Stage":
+        zone_counts["HipHop Stage"],
+
+    "Notes Stage":
+        zone_counts["Notes Stage"],
+
+    "Spotlight Stage":
+        zone_counts["Spotlight Stage"],
+
+    "FoodCourt South":
+        zone_counts["FoodCourt South"],
+
+    "Toilets West":
+        zone_counts["Toilets West"],
+
+    "Toilets East":
+        zone_counts["Toilets East"],
+
+    "FoodCourt North":
+        zone_counts["FoodCourt North"]
 })
 
 if len(st.session_state.history) > 30:
