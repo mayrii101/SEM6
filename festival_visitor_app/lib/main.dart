@@ -29,8 +29,10 @@ class _FestivalHomePageState extends State<FestivalHomePage> {
   List zones = [];
   Timer? refreshTimer;
 
-  final String apiUrl =
-      "http://192.168.1.196:5000/zone-status"; //macbook lokale API
+  //final String apiUrl =
+  //"http://192.168.1.196:5000/zone-status"; //thuis
+
+  final String apiUrl = "http://172.20.10.9:5000/zone-status"; //school
 
   @override
   void initState() {
