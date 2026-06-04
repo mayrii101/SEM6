@@ -181,7 +181,7 @@ while True:
         "Toilets East": 0
     }
 
-    # Move people
+    # move ppl
 
     for person in people:
 
@@ -199,7 +199,7 @@ while True:
             min(100, person["y"])
         )
 
-        # Random zone switch
+        # zone switch
 
         if random.random() < 0.03:
 
@@ -223,7 +223,7 @@ while True:
 
         zone_counts[person["zone"]] += 1
 
-        # Update LivePeople table
+        # update LivePeople
 
         sql = """
 

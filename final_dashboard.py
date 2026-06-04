@@ -3,6 +3,7 @@ import pandas as pd
 import serial
 import time
 import requests
+import random
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -226,26 +227,115 @@ st.plotly_chart(
 )
 
 
-# SELECT BRACELET ZONE (niet meer gesimuleerd zelf kiezen)
+# =========================================
+# SIMULATED BRACELET MOVEMENT
+# =========================================
 
+zone_connections = {
 
-zone_names = [
+    "Entrance": [
+        "MainStage",
+        "FoodCourt",
+        "Amapiano Stage"
+    ],
 
-    z["Name"]
+    "MainStage": [
+        "FoodCourt",
+        "Dancehall Stage",
+        "HipHop Stage"
+    ],
 
-    for z in zones
-]
+    "FoodCourt": [
+        "MainStage",
+        "ChillZone",
+        "FoodCourt South",
+        "FoodCout North"
+    ],
 
-bracelet_zone = st.selectbox(
+    "ChillZone": [
+        "FoodCourt",
+        "Toilets West",
+        "Toilets East"
+    ],
 
-    "Select Bracelet Zone",
+    "Amapiano Stage": [
+        "Entrance",
+        "Dancehall Stage"
+    ],
 
-    zone_names
-)
+    "Dancehall Stage": [
+        "Amapiano Stage",
+        "HipHop Stage",
+        "MainStage"
+    ],
 
+    "HipHop Stage": [
+        "Dancehall Stage",
+        "Notes Stage",
+        "MainStage"
+    ],
 
-# GET BRACELET STATE FROM API
+    "Notes Stage": [
+        "HipHop Stage",
+        "Spotlight Stage"
+    ],
 
+    "Spotlight Stage": [
+        "Notes Stage"
+    ],
+
+    "FoodCourt South": [
+        "FoodCourt",
+        "FoodCout North"
+    ],
+
+    "FoodCout North": [
+        "FoodCourt",
+        "FoodCourt South"
+    ],
+
+    "Toilets West": [
+        "ChillZone",
+        "Toilets East"
+    ],
+
+    "Toilets East": [
+        "ChillZone",
+        "Toilets West"
+    ]
+}
+
+# Create bracelet
+
+if "bracelet_zone" not in st.session_state:
+
+    st.session_state.bracelet_zone = random.choice(
+        list(zone_connections.keys())
+    )
+
+# Movement timer
+
+if "bracelet_timer" not in st.session_state:
+
+    st.session_state.bracelet_timer = 0
+
+st.session_state.bracelet_timer += 1
+
+# Move every 2-5 refreshes
+
+if st.session_state.bracelet_timer >= random.randint(2, 5):
+
+    current_zone = st.session_state.bracelet_zone
+
+    possible_moves = zone_connections[current_zone]
+
+    st.session_state.bracelet_zone = random.choice(
+        possible_moves
+    )
+
+    st.session_state.bracelet_timer = 0
+
+bracelet_zone = st.session_state.bracelet_zone
 
 selected_zone = next(
 
@@ -259,7 +349,6 @@ bracelet_state = \
 
 people_in_zone = \
     selected_zone["CurrentCount"]
-
 
 # DETERMINE COLOR
 
