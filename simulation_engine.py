@@ -104,11 +104,14 @@ def maybe_switch_zone(person):
 
 # ppl per zone
 def calculate_zone_counts(people):
-
     counts = {zone: 0 for zone in zones.keys()}
 
     for person in people:
-        counts[person["zone"]] += 1
+        zone = person.get("zone")
+
+        if zone in counts:
+            counts[zone] += 1
+        # ignore invalid zones
 
     return counts
 
@@ -129,21 +132,23 @@ def calculate_density(count):
 
 def update_person_in_db(cursor, person):
 
+    required = ["id", "zone", "x", "y"]
+
+    if not all(k in person for k in required):
+        return
+
     sql = """
     REPLACE INTO LivePeople
     (ID, ZoneName, X, Y, UpdatedAt)
     VALUES (%s, %s, %s, %s, NOW())
     """
 
-    cursor.execute(
-        sql,
-        (
-            person["id"],
-            person["zone"],
-            person["x"],
-            person["y"]
-        )
-    )
+    cursor.execute(sql, (
+        person["id"],
+        person["zone"],
+        person["x"],
+        person["y"]
+    ))
 
 
 # update zone status in db
