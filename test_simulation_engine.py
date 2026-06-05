@@ -3,7 +3,7 @@ import simulation_engine
 
 
 # UNIT
-
+#
 
 def test_calculate_density_low():
     assert simulation_engine.calculate_density(10) == "LOW"
@@ -125,7 +125,6 @@ def test_simulation_step_updates_all_zones():
 
     result = simulation_engine.simulation_step(people, cursor)
 
-    # ensure all zones exist in output
     for zone in simulation_engine.zones.keys():
         assert zone in result
 
@@ -182,7 +181,7 @@ def test_invalid_zone_handling():
 
 
 def test_missing_zone_key():
-    people = [{"id": 1, "x": 10, "y": 10}]  # no zone key
+    people = [{"id": 1, "x": 10, "y": 10}]
 
     try:
         counts = simulation_engine.calculate_zone_counts(people)
@@ -260,7 +259,7 @@ def test_simulation_step_stability():
 
     people = simulation_engine.create_people(20)
 
-    for _ in range(5):  # multiple steps
+    for _ in range(5):
         result = simulation_engine.simulation_step(people, cursor)
 
         assert isinstance(result, dict)

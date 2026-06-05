@@ -2,9 +2,9 @@ CREATE DATABASE FestivalSafety;
 
 USE FestivalSafety;
 
--- =====================================
+
 -- USERS
--- =====================================
+
 
 CREATE TABLE Users (
 
@@ -19,9 +19,9 @@ CREATE TABLE Users (
     Phone VARCHAR(30)
 );
 
--- =====================================
+
 -- ZONES
--- =====================================
+
 
 CREATE TABLE Zones (
 
@@ -34,9 +34,9 @@ CREATE TABLE Zones (
     Color VARCHAR(30)
 );
 
--- =====================================
+
 -- EMERGENCY MESSAGES
--- =====================================
+
 
 CREATE TABLE EmergencyMessage (
 
@@ -57,9 +57,9 @@ CREATE TABLE EmergencyMessage (
         REFERENCES Users(ID)
 );
 
--- =====================================
--- INSERT DEFAULT ZONES
--- =====================================
+
+-- insert ZONES
+
 
 INSERT INTO Zones (Name, Capacity, Color)
 VALUES
