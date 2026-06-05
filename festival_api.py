@@ -1,273 +1,261 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
 import mysql.connector
 
-# =========================================
-# APP SETUP
-# =========================================
-
 app = Flask(__name__)
-
 CORS(app)
 
-# =========================================
-# DATABASE CONFIG
-# =========================================
+# 🔒 Limit request size (prevents huge payload attacks)
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1MB
 
 db_config = {
-
     "host": "localhost",
-
     "user": "root",
-
     "password": "Jamayralol1!",
-
     "database": "FestivalSafety"
 }
 
 # =========================================
-# TEST ROUTE
+# DB
 # =========================================
 
+
+def get_db():
+    return mysql.connector.connect(**db_config)
+
+# =========================================
+# VALIDATION HELPERS
+# =========================================
+
+
+def is_valid_string(value):
+    return isinstance(value, str) and value.strip() != ""
+
+
+def validate_user(data):
+    if not data:
+        return False, "Missing JSON"
+
+    required = ["name", "dob", "gender", "phone"]
+
+    for field in required:
+        if field not in data:
+            return False, f"Missing field: {field}"
+
+    if not all(is_valid_string(data.get(f)) for f in required):
+        return False, "Invalid data types"
+
+    return True, None
+
+
+def validate_distress(data):
+    if not data:
+        return False, "Missing JSON"
+
+    required = ["message", "zone_id", "user_id"]
+
+    for field in required:
+        if field not in data:
+            return False, f"Missing field: {field}"
+
+    if not is_valid_string(data.get("message")):
+        return False, "Invalid message"
+
+    return True, None
+
+
+# =========================================
+# HOME
+# =========================================
 
 @app.route("/")
 def home():
+    return {"message": "Festival API Running"}
 
-    return {
-
-        "message": "Festival API Running"
-    }
 
 # =========================================
-# GET ALL ZONES
+# ZONES
 # =========================================
-
 
 @app.route("/zones", methods=["GET"])
 def get_zones():
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
 
-    db = mysql.connector.connect(**db_config)
+        cursor.execute("SELECT * FROM Zones")
+        zones = cursor.fetchall()
 
-    cursor = db.cursor(dictionary=True)
+        cursor.close()
+        db.close()
 
-    cursor.execute(
-        "SELECT * FROM Zones"
-    )
+        return jsonify(zones), 200
 
-    zones = cursor.fetchall()
+    except Exception as e:
+        return jsonify({"error": "Database error", "details": str(e)}), 400
 
-    cursor.close()
-    db.close()
-
-    return jsonify(zones)
 
 # =========================================
-# GET LIVE ZONE STATUS
+# ZONE STATUS
 # =========================================
-
 
 @app.route("/zone-status", methods=["GET"])
 def get_zone_status():
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
 
-    db = mysql.connector.connect(**db_config)
+        query = """
+        SELECT Zones.Name, Zones.Color,
+               ZoneStatus.CurrentCount,
+               ZoneStatus.DensityLevel,
+               ZoneStatus.UpdatedAt
+        FROM ZoneStatus
+        JOIN Zones ON ZoneStatus.ZoneID = Zones.ID
+        """
 
-    cursor = db.cursor(dictionary=True)
+        cursor.execute(query)
+        data = cursor.fetchall()
 
-    query = """
+        cursor.close()
+        db.close()
 
-    SELECT
+        return jsonify(data), 200
 
-        Zones.Name,
-        Zones.Color,
+    except Exception as e:
+        return jsonify({"error": "Database error", "details": str(e)}), 400
 
-        ZoneStatus.CurrentCount,
-        ZoneStatus.DensityLevel,
-        ZoneStatus.UpdatedAt
-
-    FROM ZoneStatus
-
-    JOIN Zones
-        ON ZoneStatus.ZoneID = Zones.ID
-
-    """
-
-    cursor.execute(query)
-
-    data = cursor.fetchall()
-
-    cursor.close()
-    db.close()
-
-    return jsonify(data)
 
 # =========================================
 # CREATE USER
 # =========================================
 
-
 @app.route("/users", methods=["POST"])
 def create_user():
+    try:
+        data = request.get_json(silent=True)
 
-    data = request.json
+        valid, error = validate_user(data)
+        if not valid:
+            return jsonify({"error": error}), 400
 
-    db = mysql.connector.connect(**db_config)
+        db = get_db()
+        cursor = db.cursor()
 
-    cursor = db.cursor()
+        sql = """
+        INSERT INTO Users (Name, DOB, Gender, Phone)
+        VALUES (%s, %s, %s, %s)
+        """
 
-    sql = """
+        cursor.execute(sql, (
+            data["name"],
+            data["dob"],
+            data["gender"],
+            data["phone"]
+        ))
 
-    INSERT INTO Users
+        db.commit()
+        cursor.close()
+        db.close()
 
-    (Name, DOB, Gender, Phone)
+        return jsonify({"status": "success"}), 200
 
-    VALUES (%s, %s, %s, %s)
+    except Exception as e:
+        return jsonify({"error": "Server error", "details": str(e)}), 400
 
-    """
-
-    values = (
-
-        data["name"],
-        data["dob"],
-        data["gender"],
-        data["phone"]
-    )
-
-    cursor.execute(sql, values)
-
-    db.commit()
-
-    cursor.close()
-    db.close()
-
-    return jsonify({
-
-        "status": "success"
-    })
 
 # =========================================
-# SEND DISTRESS MESSAGE
+# DISTRESS POST
 # =========================================
-
 
 @app.route("/distress", methods=["POST"])
 def send_distress():
+    try:
+        data = request.get_json(silent=True)
 
-    data = request.json
+        valid, error = validate_distress(data)
+        if not valid:
+            return jsonify({"error": error}), 400
 
-    db = mysql.connector.connect(**db_config)
+        db = get_db()
+        cursor = db.cursor()
 
-    cursor = db.cursor()
+        sql = """
+        INSERT INTO EmergencyMessage (Message, ZoneID, SenderUserID)
+        VALUES (%s, %s, %s)
+        """
 
-    sql = """
+        cursor.execute(sql, (
+            data["message"],
+            data["zone_id"],
+            data["user_id"]
+        ))
 
-    INSERT INTO EmergencyMessage
+        db.commit()
+        cursor.close()
+        db.close()
 
-    (Message, ZoneID, SenderUserID)
+        return jsonify({"status": "alert received"}), 200
 
-    VALUES (%s, %s, %s)
+    except Exception as e:
+        return jsonify({"error": "Server error", "details": str(e)}), 400
 
-    """
-
-    values = (
-
-        data["message"],
-        data["zone_id"],
-        data["user_id"]
-    )
-
-    cursor.execute(sql, values)
-
-    db.commit()
-
-    cursor.close()
-    db.close()
-
-    return jsonify({
-
-        "status": "alert received"
-    })
 
 # =========================================
-# GET DISTRESS MESSAGES
+# GET DISTRESS
 # =========================================
-
 
 @app.route("/distress", methods=["GET"])
 def get_distress():
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
 
-    db = mysql.connector.connect(**db_config)
+        query = """
+        SELECT EmergencyMessage.ID,
+               EmergencyMessage.Message,
+               EmergencyMessage.CreatedAT,
+               Users.Name AS Sender,
+               Zones.Name AS Zone
+        FROM EmergencyMessage
+        JOIN Users ON EmergencyMessage.SenderUserID = Users.ID
+        JOIN Zones ON EmergencyMessage.ZoneID = Zones.ID
+        ORDER BY CreatedAT DESC
+        """
 
-    cursor = db.cursor(dictionary=True)
+        cursor.execute(query)
+        messages = cursor.fetchall()
 
-    query = """
+        cursor.close()
+        db.close()
 
-    SELECT
+        return jsonify(messages), 200
 
-        EmergencyMessage.ID,
-        EmergencyMessage.Message,
-        EmergencyMessage.CreatedAT,
+    except Exception as e:
+        return jsonify({"error": "Database error", "details": str(e)}), 400
 
-        Users.Name AS Sender,
-
-        Zones.Name AS Zone
-
-    FROM EmergencyMessage
-
-    JOIN Users
-        ON EmergencyMessage.SenderUserID = Users.ID
-
-    JOIN Zones
-        ON EmergencyMessage.ZoneID = Zones.ID
-
-    ORDER BY CreatedAT DESC
-
-    """
-
-    cursor.execute(query)
-
-    messages = cursor.fetchall()
-
-    cursor.close()
-    db.close()
-
-    return jsonify(messages)
 
 # =========================================
-# GET LIVE PEOPLE
+# PEOPLE
 # =========================================
-
 
 @app.route("/people", methods=["GET"])
 def get_people():
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
 
-    db = mysql.connector.connect(**db_config)
+        cursor.execute("SELECT * FROM LivePeople")
+        people = cursor.fetchall()
 
-    cursor = db.cursor(dictionary=True)
+        cursor.close()
+        db.close()
 
-    cursor.execute(
+        return jsonify(people), 200
 
-        "SELECT * FROM LivePeople"
-    )
-
-    people = cursor.fetchall()
-
-    cursor.close()
-    db.close()
-
-    return jsonify(people)
-# =========================================
-# RUN SERVER
-# =========================================
+    except Exception as e:
+        return jsonify({"error": "Database error", "details": str(e)}), 400
 
 
 if __name__ == "__main__":
-
-    app.run(
-
-        host="0.0.0.0",
-
-        port=5000,
-
-        debug=True
-    )
+    app.run(host="0.0.0.0", port=5000, debug=True)
