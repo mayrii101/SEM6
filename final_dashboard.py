@@ -10,15 +10,9 @@ import plotly.graph_objects as go
 
 from streamlit_autorefresh import st_autorefresh
 
-# =========================================
-# AUTO REFRESH
-# =========================================
 
 st_autorefresh(interval=5000, key="refresh")
 
-# =========================================
-# PAGE CONFIG
-# =========================================
 
 st.set_page_config(
 
@@ -29,16 +23,11 @@ st.set_page_config(
 
 st.title("🎪 Smart Festival Crowd Heatmap")
 
-# =========================================
-# API
-# =========================================
 
 # API_URL = "http://127.0.0.1:5000"
 API_URL = "http://0.0.0.0:5000"
 
-# =========================================
-# ESP32 CONNECTION
-# =========================================
+# espconnectie
 
 PORT = '/dev/cu.usbserial-0001'
 
@@ -65,9 +54,7 @@ connected = st.session_state.connected
 esp32 = st.session_state.get("esp32")
 
 
-# FETCH LIVE PEOPLE
-
-
+# get ppl
 try:
 
     people_response = requests.get(
@@ -86,7 +73,7 @@ except Exception as e:
     st.stop()
 
 
-# FETCH ZONE STATUS
+# get zone status
 
 
 try:
@@ -107,7 +94,7 @@ except Exception as e:
     st.stop()
 
 
-# FETCH MESSAGES
+# get alert messages
 
 
 try:
@@ -124,7 +111,7 @@ except BaseException:
     distress_messages = []
 
 
-# LIVE FESTIVAL MAP
+# heatmap
 
 
 st.subheader("Live Festival Map")
@@ -165,7 +152,7 @@ st.plotly_chart(
 )
 
 
-# HISTORICAL ANALYTICS
+# grafiek historische trend
 
 
 if "history" not in st.session_state:
@@ -227,9 +214,7 @@ st.plotly_chart(
 )
 
 
-# =========================================
-# SIMULATED BRACELET MOVEMENT
-# =========================================
+# route armband demo
 
 zone_connections = {
 
@@ -305,7 +290,6 @@ zone_connections = {
     ]
 }
 
-# Create bracelet
 
 if "bracelet_zone" not in st.session_state:
 
@@ -313,7 +297,6 @@ if "bracelet_zone" not in st.session_state:
         list(zone_connections.keys())
     )
 
-# Movement timer
 
 if "bracelet_timer" not in st.session_state:
 
@@ -321,7 +304,7 @@ if "bracelet_timer" not in st.session_state:
 
 st.session_state.bracelet_timer += 1
 
-# Move every 2-5 refreshes
+# move 2-5 refreshes
 
 if st.session_state.bracelet_timer >= random.randint(2, 5):
 
@@ -350,8 +333,6 @@ bracelet_state = \
 people_in_zone = \
     selected_zone["CurrentCount"]
 
-# DETERMINE COLOR
-
 
 if bracelet_state == "LOW":
 
@@ -366,9 +347,7 @@ else:
     bracelet_color = "red"
 
 
-# SEND TO ESP32
-
-
+# stuur naar esp
 if connected:
 
     esp32.write(
@@ -377,9 +356,7 @@ if connected:
     )
 
 
-# BRACELET STATUS
-
-
+# status armband dashboard
 st.subheader("Real Bracelet")
 
 st.write(
@@ -394,9 +371,7 @@ st.write(
     f"Nearby People: **{people_in_zone}**"
 )
 
-# ZONE HEAT LEVELS
-
-
+# alle heatlevels alle zones
 st.subheader("Zone Heat Levels")
 
 for zone in zones:
@@ -426,9 +401,7 @@ for zone in zones:
         )
 
 
-# DISTRESS MESSAGES
-
-
+# alle meldingen
 st.subheader("Distress Messages")
 
 if len(distress_messages) == 0:
@@ -459,9 +432,7 @@ else:
         )
 
 
-# CONNECTION STATUS (ESP32)
-
-
+# connection status armband
 if connected:
 
     st.success(
